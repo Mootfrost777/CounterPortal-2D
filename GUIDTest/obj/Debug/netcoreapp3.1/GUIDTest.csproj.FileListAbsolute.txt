@@ -1,0 +1,14 @@
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.exe
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.deps.json
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.runtimeconfig.json
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.runtimeconfig.dev.json
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.dll
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\bin\Debug\netcoreapp3.1\GUIDTest.pdb
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.csproj.AssemblyReference.cache
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.AssemblyInfoInputs.cache
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.AssemblyInfo.cs
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.csproj.CoreCompileInputs.cache
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.dll
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.pdb
+C:\Users\Anndr\Documents\GitHub\CounterPortal-2D\GUIDTest\obj\Debug\netcoreapp3.1\GUIDTest.genruntimeconfig.cache
