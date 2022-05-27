@@ -7,23 +7,18 @@ namespace CounterPortalServer.Classes
 {
     public enum SessionStatus
     {
-        StartGame, WaitingForPlayers, EndGame, StateUpdate
+        StartGame, EndGame, StateUpdate, WaitingForPlayers
     }
     public class SessionInstance
     {
         [JsonProperty("status")]
-        public SessionStatus status = SessionStatus.WaitingForPlayers;
+        public SessionStatus status = SessionStatus.StartGame;
 
         [JsonProperty("players")]
         public List<Player> players = new List<Player>();
 
         [JsonProperty("seed")]
         public int seed;
-
-        public string Serialize()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
         
         public void Deserialize(string json)
         {
@@ -31,6 +26,19 @@ namespace CounterPortalServer.Classes
             status = nm.status;
             players = nm.players;
             seed = nm.seed;
-        } 
+        }
+
+        public SessionInstance DeepCopy()
+        {
+            SessionInstance nm = new SessionInstance();
+            nm.status = this.status;
+            nm.seed = this.seed;
+            nm.players = new List<Player>();
+            foreach (Player p in this.players)
+            {
+                nm.players.Add(p);
+            }
+            return nm;
+        }
     }
 }

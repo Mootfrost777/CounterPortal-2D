@@ -7,14 +7,15 @@ using Newtonsoft.Json;
 
 namespace CounterPortal_2D.Classes
 {
-    internal class Portal
+    public class Portal
     {
         public Vector2 position;
 
         private int type;
 
         [JsonIgnore]
-        public Texture2D texture;
+        public static Texture2D texture_t1;
+        public static Texture2D texture_t2;
 
         public Portal(Vector2 position, int type)
         {
@@ -22,21 +23,18 @@ namespace CounterPortal_2D.Classes
             this.type = type;
         }
 
-        public void LoadContent(ContentManager content)
-        {
-            if (type == 0)
-            {
-                texture = content.Load<Texture2D>("Portal_t0");
-            }
-            else
-            {
-                texture = content.Load<Texture2D>("Portal_t1");
-            }
-        }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, position, Color.White);
+            switch (type)
+            {
+                case 1:
+                    spriteBatch.Draw(texture_t1, position, Color.White);
+                    break;
+                case 2:
+                    spriteBatch.Draw(texture_t2, position, Color.White);
+                    break;
+            }
         }
 
         public void Update(GameTime gameTime)

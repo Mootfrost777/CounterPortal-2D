@@ -36,14 +36,13 @@ namespace CounterPortal_2D.Classes
         public bool isAlive = true;
 
         [JsonProperty("portals")]
-        private List<Portal> portals = new List<Portal>();
+        public List<Portal> portals = new List<Portal>();
 
         [JsonProperty("bullets")]
         private List<Bullet> bullets = new List<Bullet>();
 
         [JsonIgnore]
-        private Texture2D texture;
-        private Texture2D bulletTexture;
+        public static Texture2D texture;
         private int speed = 1;
         private int portalsPlaced = 0;
         private KeyboardState oldKeyboardState;
@@ -51,26 +50,6 @@ namespace CounterPortal_2D.Classes
 
         [JsonIgnore]
         public Rectangle playerRect;
-
-        public Player()
-        {
-
-        }
-
-
-        public void LoadContent(ContentManager content)
-        {
-            texture = content.Load<Texture2D>("Player");
-
-            portals.Add(new Portal(new Vector2(-1000, -1000), 0));
-            portals.Add(new Portal(new Vector2(-1000, -1000), 1));
-
-            foreach (var portal in portals)
-            {
-                portal.LoadContent(content);
-            }
-            bulletTexture = content.Load<Texture2D>("Bullet");
-        }
 
         public void Draw(SpriteBatch spriteBatch)
         {
@@ -116,11 +95,11 @@ namespace CounterPortal_2D.Classes
             {
                 if (portalsPlaced % 2 == 0)
                 {
-                    portals[0].SetPosition(position - new Vector2(portals[0].texture.Width / 2, portals[0].texture.Height / 2));
+                    portals[0].SetPosition(position - new Vector2(Portal.texture_t1.Width / 2, Portal.texture_t1.Height / 2));
                 }
                 else
                 {
-                    portals[1].SetPosition(position - new Vector2(portals[1].texture.Width / 2, portals[1].texture.Height / 2));
+                    portals[1].SetPosition(position - new Vector2(Portal.texture_t2.Width / 2, Portal.texture_t2.Height / 2));
                 }
                 portalsPlaced++;
             }
@@ -128,11 +107,11 @@ namespace CounterPortal_2D.Classes
             {
                 Teleport();
             }
-            if (mouseState.LeftButton.Equals(ButtonState.Pressed) && oldMouseState.LeftButton.Equals(ButtonState.Released))
+            if (mouseState.LeftButton.Equals(ButtonState.Pressed) && oldMouseState.LeftButton.Equals(ButtonState.Released) && bullets.Count < 5)
             {
                 Vector2 destinantion = mouseState.Position.ToVector2() - position;
                 destinantion.Normalize();
-                bullets.Add(new Bullet(bulletTexture, position, destinantion * speed * 2));
+                bullets.Add(new Bullet(position, destinantion * speed * 2));
             }
             oldKeyboardState = keyState;
             oldMouseState = mouseState;
@@ -174,9 +153,9 @@ namespace CounterPortal_2D.Classes
             for (int i = 0; i < portals.Count; i++)            
             { 
 
-                if (position.X + texture.Width / 2 < portals[i].position.X + portals[i].texture.Width &&
+                if (position.X + texture.Width / 2 < portals[i].position.X + Portal.texture_t2.Width &&
                      position.X + texture.Width / 2 > portals[i].position.X &&
-                     position.Y + texture.Height / 2 < portals[i].position.Y + portals[i].texture.Height &&
+                     position.Y + texture.Height / 2 < portals[i].position.Y + Portal.texture_t2.Height &&
                      position.Y + texture.Height / 2> portals[i].position.Y)
                 {
                     if (i == 0)
@@ -194,21 +173,30 @@ namespace CounterPortal_2D.Classes
 
         public string Serialize()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(DeepCopy(this));
         }
 
-        public void Deserialize(string json)
+        private Player DeepCopy(Player player)
         {
-            Player player = JsonConvert.DeserializeObject<Player>(json);
-            position = player.position;
-            name = player.name;
-            score = player.score;
-            isAlive = player.isAlive;
-            portals = player.portals;
-            bullets = player.bullets;
-            score = player.score;
-            Id = player.Id;
-            status = player.status;
+            Player player1 = new Player();
+            player1.Id = player.Id;
+            player1.name = player.name;
+            player1.position = player.position;
+            player1.rotation = player.rotation;
+            player1.score = player.score;
+            player1.isAlive = player.isAlive;
+            player1.rotation = player.rotation;
+            player1.portals = new List<Portal>();
+            foreach (var portal in player.portals)
+            {
+                player1.portals.Add(portal);
+            }
+            player1.bullets = new List<Bullet>();
+            foreach (var bullet in player.bullets)
+            {
+                player1.bullets.Add(bullet);
+            }
+            return player1;
         }
     }
 }

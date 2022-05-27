@@ -7,7 +7,7 @@ namespace CounterPortal_2D.Classes
 {
     public enum SessionStatus
     {
-        StartGame, WaitingForPlayers, EndGame, StateUpdate
+        StartGame, EndGame, StateUpdate, WaitingForPlayers
     }
     public class SessionInstance
     {

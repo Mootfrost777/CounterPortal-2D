@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace CounterPortalServer
 {
@@ -24,20 +25,25 @@ namespace CounterPortalServer
             {
                 while (true)
                 {
-                    if (players.FindAll(x => x.status == PlayerStatus.Ready).Count >= 4)
+                    try
                     {
-                        SessionInstance session = new SessionInstance();
-                        for (int i = 0; i < 4; i++)
+                        if (players.Count >= 4)
                         {
-                            session.players.Add(players[0]);
-                            players.Remove(players[0]);
+                            SessionInstance session = new SessionInstance();
+                            for (int i = 0; i < 4; i++)
+                            {
+                                session.players.Add(FindPlayer());
+                            }
+                            session.seed = random.Next();
+                            Console.WriteLine("Starting game with seed: " + session.seed);
+                            StartGame(session);
+                            Thread.Sleep(100);
                         }
-                        session.seed = random.Next();
-                        session.status = SessionStatus.StartGame;
-                        Console.WriteLine("Starting game with seed: " + session.seed);
-                        StartGame(session);
                     }
-                    Thread.Sleep(500);
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
             });
             matchmakingThread.Start();
@@ -47,7 +53,7 @@ namespace CounterPortalServer
                 Socket client = socket.Accept();
                 Thread thread = new Thread(() =>
                 {
-                    byte[] data = new byte[1024];
+                    byte[] data = new byte[4096];
                     int recv = client.Receive(data);
                     string json = Encoding.ASCII.GetString(data, 0, recv);
                     Player player = new Player();
@@ -55,35 +61,26 @@ namespace CounterPortalServer
                     player.ClientSocket = client;
                     SessionInstance session = new SessionInstance();
                     session.status = SessionStatus.WaitingForPlayers;
-                    Send(session.Serialize(), player.ClientSocket);
+                    Send(Serialize(session), player.ClientSocket);
                     players.Add(player);
                     Console.WriteLine("Player " + player.Id + " connected");
-                    
-                    Thread recievePlayerState = new Thread(() =>
-                    {
-                        byte[] data = new byte[1024];
-                        while (true)
-                        {
-                            try
-                            {
-                                int index = players.FindIndex(x => x.Id == player.Id);
-                                players[index].ClientSocket.ReceiveTimeout = 120000;
-                                int dataLength = players[index].ClientSocket.Receive(data);
-                                Player playerInst = new Player();
-                                playerInst.Deserialize(Encoding.ASCII.GetString(data, 0, dataLength));
-                                playerInst.ClientSocket = players[index].ClientSocket;
-                                players[index] = playerInst;
-                            }
-                            catch
-                            {
-                                break;
-                            }
-                            
-                        }
-                    });
-                    recievePlayerState.Start();
                 });
                 thread.Start();
+            }
+        }
+        
+        static Player FindPlayer()
+        {
+            Player player = players[0];
+            if (player.ClientSocket.Connected)
+            {
+                players.Remove(player);
+                return player;
+            }
+            else
+            {
+                players.Remove(player);
+                return FindPlayer();
             }
         }
 
@@ -94,6 +91,7 @@ namespace CounterPortalServer
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.Bind(ipe);
             socket.Listen(100);
+            Console.WriteLine("Listening on " + ip_address + ":" + port);
         }
 
         static void Send(string message, Socket client)
@@ -108,13 +106,20 @@ namespace CounterPortalServer
                 Console.WriteLine(e.Message);
             }
         }
-
+        
         static void Cast(SessionInstance session)
         {
-            foreach (var player in session.players)
+            SessionInstance nm = session.DeepCopy();
+            string message = Serialize(nm);
+            foreach (var player in nm.players)
             {
-                Send(session.Serialize(), player.ClientSocket);
+                Send(message, player.ClientSocket);
             }
+        }
+        
+        public static string Serialize(SessionInstance session)
+        {
+            return JsonConvert.SerializeObject(session);
         }
 
         static void StartGame(SessionInstance session)
@@ -123,22 +128,25 @@ namespace CounterPortalServer
             Cast(session);
             session.status = SessionStatus.StateUpdate;
             Console.WriteLine("Session started. State update casted.");
-
-            for (int i = 0; i < session.players.Count; i++)
+            
+            for (int i = 0; i <= session.players.Count - 1; i++)
             {
-                Thread recievePlayerState = new Thread(() =>
+                Thread recievePlayerState = new Thread((object index) =>
                 {
-                    byte[] data = new byte[1024];
+                    int _index = (int)index;
+                    byte[] data = new byte[4096];
+                    Console.WriteLine($"Started thread for player {index}");
                     while (true)
                     {
                         try
                         {
-                            session.players[i].ClientSocket.ReceiveTimeout = 120000;
-                            int dataLength = session.players[i].ClientSocket.Receive(data);
+                            session.players[_index].ClientSocket.ReceiveTimeout = 120000;
+                            int dataLength = session.players[_index].ClientSocket.Receive(data);
                             Player playerInst = new Player();
-                            playerInst.Deserialize(Encoding.ASCII.GetString(data, 0, dataLength));
-                            playerInst.ClientSocket = session.players[i].ClientSocket;
-                            session.players[i] = playerInst;
+                            string json = Encoding.ASCII.GetString(data, 0, dataLength);
+                            playerInst.Deserialize(json);
+                            playerInst.ClientSocket = session.players[_index].ClientSocket;
+                            session.players[_index] = playerInst;
                         }
                         catch (Exception ex)
                         {
@@ -147,32 +155,34 @@ namespace CounterPortalServer
                         }
 
                     }
+                    Console.WriteLine("Thread for player " + index + " finished");
                 });
-                recievePlayerState.Start();
+                recievePlayerState.Start(i);
             }
+            
 
             Thread updateStateThread = new Thread(() =>
             {
                 while (session.status == SessionStatus.StateUpdate)
                 { 
                     int aliveCount = 0;
-                    foreach (var player in session.players)
+                    SessionInstance nm = session.DeepCopy();
+                    foreach (var player in nm.players)
                     {
                         if (player.isAlive)
                         {
                             aliveCount++;
                         }
                     }
-                    /*if (aliveCount < 2)
+                    if (aliveCount < 2)
                     {
                         session.status = SessionStatus.EndGame;
-                    }*/
+                    }
                     Cast(session);
                     Thread.Sleep(17);
                 }
             });
             updateStateThread.Start();
-            //Thread receiveStateThread
         }
     }
 }

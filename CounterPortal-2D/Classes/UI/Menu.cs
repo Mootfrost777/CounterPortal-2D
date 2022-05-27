@@ -14,7 +14,7 @@ namespace CounterPortal_2D.Classes.UI
     class Menu
     {
         public List<Label> items;
-        private string[] elements = { "Play", "Connect to server", "Info", "Exit" };
+        private string[] elements = { "Play", "Info", "Exit" };
         private int select = 0;
 
         private KeyboardState keyboardState;
@@ -81,17 +81,7 @@ namespace CounterPortal_2D.Classes.UI
                 switch (select)
                 {
                     case 0:
-                        if (!string.IsNullOrEmpty(Game1.ip))
-                        {
-                            Game1._gameState = GameState.Awaiting;
-                        }
-                        else
-                        {
-                            System.Windows.Forms.MessageBox.Show("Connect to server first.");
-                        }
-                        break;
-                    case 1:
-                        Game1._gameState = GameState.Connect;
+                        Game1._gameState = GameState.ConnectToServer;
                         break;
                     case 2:
                         Game1._gameState = GameState.Exit;

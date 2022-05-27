@@ -10,23 +10,23 @@ namespace CounterPortal_2D.Classes
 {
     internal class Bullet
     {
-
+        [JsonProperty("position")]
         private Vector2 position;
-        private Vector2 speed;
 
-        public Rectangle boundingBox;
+        [JsonProperty("isVisible")]
         public bool isVisible = true;
 
         [JsonIgnore]
-        private Texture2D texture;
+        public static Texture2D texture;
+        public Rectangle boundingBox;
+        private Vector2 speed;
 
-        public Bullet(Texture2D texture, Vector2 position, Vector2 speed)
+
+        public Bullet(Vector2 position, Vector2 speed)
         {
-            this.texture = texture;
             this.position = position;
             this.speed = speed;
         }
-        
 
 
         public void Update()

@@ -14,7 +14,7 @@ namespace CounterPortal_2D
 {
     public enum GameState
     {
-        Menu, Game, End, Pause, Connect, Reset, Exit, Awaiting
+        Menu, Game, End, Pause, ConnectToServer, Reset, Exit
     }
     public class Game1 : Game
     {
@@ -69,25 +69,24 @@ namespace CounterPortal_2D
                 while (true)
                 {
                     SessionInstance session = new SessionInstance();
-                    byte[] data = new byte[1024];
-                    socket.Receive(data);
-                    string json = Encoding.ASCII.GetString(data);
+                    byte[] data = new byte[4096];
+                    int bytes = socket.Receive(data);
+                    string json = Encoding.UTF8.GetString(data, 0, bytes);
                     session.Deserialize(json);
                     switch (session.status)
                     {
                         case SessionStatus.StartGame:
-                            _gameState = GameState.Game;
+                            stateSender.Start();
                             session.players.Remove(session.players.Find(x => x.Id == _player.Id));
                             _opponents = session.players;
-                            foreach (var player in _opponents)
-                            {
-                                player.LoadContent(Content);
-                            }
-                            break;
-                        case SessionStatus.WaitingForPlayers:
-                            _gameState = GameState.Awaiting;
+                            _mapGenerator = new MapGenerator(session.seed, borderWidth);
+                            _walls = _mapGenerator.GenerateMap();
+                            _gameState = GameState.Game;
                             break;
                         case SessionStatus.EndGame:
+                            session.players.Remove(session.players.Find(x => x.Id == _player.Id));
+                            _opponents = session.players;
+                            socket.Close();  // Игра кончилась - отключаемся, показываем результаты
                             _gameState = GameState.End;
                             break;
                         case SessionStatus.StateUpdate:
@@ -117,7 +116,16 @@ namespace CounterPortal_2D
             Wall.texture = new Texture2D(GraphicsDevice, 1, 1);
             Wall.texture.SetData(new[] { Color.White });
 
-            _player.LoadContent(Content);
+
+            // This textures are static because there will be many instances of them
+            Player.texture = Content.Load<Texture2D>("Player");
+            Bullet.texture = Content.Load<Texture2D>("Bullet");
+            Portal.texture_t1 = Content.Load<Texture2D>("Portal_t0");
+            Portal.texture_t2 = Content.Load<Texture2D>("Portal_t1");
+
+            _player.portals.Add(new Portal(new Vector2(-1000, -1000), 1));  // Add portals
+            _player.portals.Add(new Portal(new Vector2(-1000, -1000), 2));
+
             _aim.LoadContent(Content);
             _menu.LoadContent(Content);
         }
@@ -133,25 +141,41 @@ namespace CounterPortal_2D
                     _menu.Update();
                     break;
                 case GameState.Game:
-                    
                     UpdateGame();
                     break;
                 case GameState.Pause:
                     break;
-                case GameState.Connect:
+                case GameState.ConnectToServer:
                     Connect connect = new Connect();
                     if (connect.ShowDialog() == DialogResult.OK)
                     {
-                        _gameState = GameState.Menu;
                         ip = connect.IP;
                         port = connect.Port;
                         socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        socket.Connect(ip, port);
-                        _player.Id = Guid.NewGuid().ToString();
-                        data = Encoding.ASCII.GetBytes(_player.Serialize());
-                        socket.Send(data);
+                        try
+                        {
+                            socket.Connect(ip, port);
+                            _player.Id = Guid.NewGuid().ToString();
+                            data = Encoding.ASCII.GetBytes(_player.Serialize());
+                            socket.Send(data);
+                        }
+                        catch
+                        {
+                            MessageBox.Show("Server is not responding");
+                            _gameState = GameState.Menu;
+                        }
+
                         stateReceiver.Start();
-                        Console.WriteLine("Connected to: " + ip);
+
+                        GameMessage gm = new GameMessage();
+                        gm.Message = "Waiting for players...";
+                        //gm.ShowDialog();
+
+                        while (_gameState == GameState.ConnectToServer) 
+                        {
+                            Console.WriteLine();
+                        }
+                        //gm.Close();
                     }
                     else 
                     {
@@ -161,18 +185,6 @@ namespace CounterPortal_2D
                     break;
                 case GameState.Reset:
                     Reset();
-                    break;
-                case GameState.Awaiting:
-                    _player.status = PlayerStatus.Ready;
-                    data = Encoding.ASCII.GetBytes(_player.Serialize());
-                    socket.Send(data);
-                    Console.WriteLine("Waiting for game to start...");
-                    while (_gameState != GameState.Game)
-                    {
-
-                    }
-                    stateSender.Start();
-                    Console.WriteLine("Game started!");
                     break;
             }
 
@@ -192,8 +204,6 @@ namespace CounterPortal_2D
                     DrawGame();
                     break;
                 case GameState.Pause:
-                    break;
-                case GameState.Connect:
                     break;
             }
             _aim.Draw(_spriteBatch);
@@ -218,17 +228,17 @@ namespace CounterPortal_2D
         private void UpdateGame()
         {
             _player.Update();
-            foreach (var player in _opponents)
+            /*foreach (var player in _opponents)
             {
                 player.Update();
-            }
+            }*/
         }
 
         private void Reset()
         {
             _mapGenerator = new MapGenerator(seed, borderWidth);
             _walls = _mapGenerator.GenerateMap();
-            _gameState = GameState.Awaiting;
+            _gameState = GameState.Menu;
         }
     }
 }

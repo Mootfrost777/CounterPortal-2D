@@ -7,12 +7,18 @@ using Newtonsoft.Json;
 
 namespace CounterPortalServer.Classes
 {
-    internal class Portal
+    public class Portal
     {
         public Vector2 position;
         private int type;
         
         [JsonIgnore]
         public Texture2D texture;
+
+        public Portal(Vector2 position, int type)
+        {
+            this.position = position;
+            this.type = type;
+        }
     }
 }
