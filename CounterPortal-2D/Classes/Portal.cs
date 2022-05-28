@@ -9,8 +9,10 @@ namespace CounterPortal_2D.Classes
 {
     public class Portal
     {
+        [JsonProperty("position")]
         public Vector2 position;
 
+        [JsonProperty("type")]
         private int type;
 
         [JsonIgnore]

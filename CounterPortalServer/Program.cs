@@ -135,7 +135,7 @@ namespace CounterPortalServer
                 {
                     int _index = (int)index;
                     byte[] data = new byte[4096];
-                    Console.WriteLine($"Started thread for player {index}");
+                    Console.WriteLine($"Started thread for player {session.players[_index].Id}");
                     while (true)
                     {
                         try
@@ -159,7 +159,7 @@ namespace CounterPortalServer
                         }
 
                     }
-                    Console.WriteLine("Thread for player " + index + " finished");
+                    Console.WriteLine($"Thread for player {session.players[_index].Id} finished");
                 });
                 recievePlayerState.Start(i);
             }

@@ -9,16 +9,10 @@ namespace CounterPortalServer.Classes
 {
     public class Portal
     {
+        [JsonProperty("position")]
         public Vector2 position;
-        private int type;
-        
-        [JsonIgnore]
-        public Texture2D texture;
 
-        public Portal(Vector2 position, int type)
-        {
-            this.position = position;
-            this.type = type;
-        }
+        [JsonProperty("type")]
+        private int type;
     }
 }

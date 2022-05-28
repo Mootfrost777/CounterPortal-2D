@@ -63,6 +63,7 @@ namespace CounterPortalServer.Classes
         {
             Player player = JsonConvert.DeserializeObject<Player>(json);
             position = player.position;
+            rotation = player.rotation;
             name = player.name;
             score = player.score;
             isAlive = player.isAlive;
