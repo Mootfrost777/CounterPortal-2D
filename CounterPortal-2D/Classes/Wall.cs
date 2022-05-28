@@ -15,7 +15,7 @@ namespace CounterPortal_2D.Classes
         {
             this.wallRect = wallRect;
         }
-        
+
         public void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(texture, wallRect, Color.White);

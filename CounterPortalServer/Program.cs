@@ -141,12 +141,16 @@ namespace CounterPortalServer
                         try
                         {
                             session.players[_index].ClientSocket.ReceiveTimeout = 120000;
-                            int dataLength = session.players[_index].ClientSocket.Receive(data);
-                            Player playerInst = new Player();
-                            string json = Encoding.ASCII.GetString(data, 0, dataLength);
-                            playerInst.Deserialize(json);
-                            playerInst.ClientSocket = session.players[_index].ClientSocket;
-                            session.players[_index] = playerInst;
+
+                            lock (session.players[_index].ClientSocket)
+                            {
+                                int dataLength = session.players[_index].ClientSocket.Receive(data);
+                                Player playerInst = new Player();
+                                string json = Encoding.ASCII.GetString(data, 0, dataLength);
+                                playerInst.Deserialize(json);
+                                playerInst.ClientSocket = session.players[_index].ClientSocket;
+                                session.players[_index] = playerInst;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -178,8 +182,11 @@ namespace CounterPortalServer
                     {
                         session.status = SessionStatus.EndGame;
                     }
-                    Cast(session);
-                    Thread.Sleep(17);
+                    lock (session)
+                    {
+                        Cast(session);
+                    }
+                    Thread.Sleep(5);
                 }
             });
             updateStateThread.Start();

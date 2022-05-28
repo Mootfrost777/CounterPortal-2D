@@ -32,6 +32,7 @@ namespace CounterPortal_2D
         public static List<Wall> _walls = new List<Wall>();
 
         Menu _menu;
+        Floor _floor;
 
         private int borderWidth = 10;
 
@@ -63,38 +64,42 @@ namespace CounterPortal_2D
             _player = new Player();
             _aim = new Aim();
             _menu = new Menu();
+            _floor = new Floor();
             base.Initialize();
             stateReceiver = new Thread(() =>
             {
                 while (true)
                 {
                     SessionInstance session = new SessionInstance();
-                    byte[] data = new byte[4096];
-                    int bytes = socket.Receive(data);
-                    string json = Encoding.UTF8.GetString(data, 0, bytes);
-                    session.Deserialize(json);
-                    switch (session.status)
+                    lock (socket)
                     {
-                        case SessionStatus.StartGame:
-                            stateSender.Start();
-                            session.players.Remove(session.players.Find(x => x.Id == _player.Id));
-                            _opponents = session.players;
-                            _mapGenerator = new MapGenerator(session.seed, borderWidth);
-                            _walls = _mapGenerator.GenerateMap();
-                            _gameState = GameState.Game;
-                            break;
-                        case SessionStatus.EndGame:
-                            session.players.Remove(session.players.Find(x => x.Id == _player.Id));
-                            _opponents = session.players;
-                            socket.Close();  // Игра кончилась - отключаемся, показываем результаты
-                            _gameState = GameState.End;
-                            break;
-                        case SessionStatus.StateUpdate:
-                            session.players.Remove(session.players.Find(x => x.Id == _player.Id));
-                            _opponents = session.players;
-                            break;
-                        default:
-                            break;
+                        byte[] data = new byte[4096];
+                        int bytes = socket.Receive(data);
+                        string json = Encoding.UTF8.GetString(data, 0, bytes);
+                        session.Deserialize(json);
+                        switch (session.status)
+                        {
+                            case SessionStatus.StartGame:
+                                stateSender.Start();
+                                session.players.Remove(session.players.Find(x => x.Id == _player.Id));
+                                _opponents = session.players;
+                                _mapGenerator = new MapGenerator(session.seed, borderWidth);
+                                _walls = _mapGenerator.GenerateMap();
+                                _gameState = GameState.Game;
+                                break;
+                            case SessionStatus.EndGame:
+                                session.players.Remove(session.players.Find(x => x.Id == _player.Id));
+                                _opponents = session.players;
+                                socket.Close();  // Игра кончилась - отключаемся, показываем результаты
+                                _gameState = GameState.End;
+                                break;
+                            case SessionStatus.StateUpdate:
+                                session.players.Remove(session.players.Find(x => x.Id == _player.Id));
+                                _opponents = session.players;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             });
@@ -103,8 +108,11 @@ namespace CounterPortal_2D
                 while (true)
                 {
                     byte[] data = Encoding.ASCII.GetBytes(_player.Serialize());
-                    socket.Send(data);
-                    Thread.Sleep(17);
+                    lock (socket)
+                    {
+                        socket.Send(data);
+                    }
+                    Thread.Sleep(5);
                 }
             });
         }
@@ -113,8 +121,8 @@ namespace CounterPortal_2D
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             //_background = Content.Load<Texture2D>("background");
-            Wall.texture = new Texture2D(GraphicsDevice, 1, 1);
-            Wall.texture.SetData(new[] { Color.White });
+            Wall.texture = Content.Load<Texture2D>("wall");
+            //Wall.texture.SetData(new[] { Color.White });
 
 
             // This textures are static because there will be many instances of them
@@ -128,6 +136,7 @@ namespace CounterPortal_2D
 
             _aim.LoadContent(Content);
             _menu.LoadContent(Content);
+            _floor.LoadContent(Content);
         }
 
         private static byte[] data;
@@ -214,6 +223,7 @@ namespace CounterPortal_2D
 
         private void DrawGame()
         {
+            _floor.Draw(_spriteBatch);
             foreach (var wall in _walls)
             {
                 wall.Draw(_spriteBatch);
